@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Interactive 2D Clustering Playground</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;500;600;700&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --border: #e2e8f0;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --green: #059669;
+      --green-hover: #047857;
+      --rose: #e11d48;
+      --amber: #d97706;
+      --purple: #7c3aed;
+      --canvas-bg: #ffffff;
+      --canvas-border: #cbd5e1;
+    }
+
+    body.dark-mode {
+      --bg: #090e1a;
+      --surface: #111827;
+      --border: #1f2937;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --primary: #38bdf8;
+      --primary-hover: #0284c7;
+      --green: #10b981;
+      --green-hover: #059669;
+      --rose: #f43f5e;
+      --amber: #f59e0b;
+      --purple: #a855f7;
+      --canvas-bg: #0b1120;
+      --canvas-border: #334155;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      transition: background-color 0.25s ease, color 0.25s ease;
+    }
+
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .badge {
+      background: var(--primary);
+      color: #ffffff;
+      font-family: 'Outfit', sans-serif;
+      font-weight: 800;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding: 0.35rem 0.75rem;
+      border-radius: 999px;
+    }
+
+    h1 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.25rem;
+      font-weight: 700;
+    }
+
+    main {
+      flex: 1;
+      padding: 1.5rem 2rem;
+      max-width: 1200px;
+      margin: 0 auto;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 1.2rem;
+    }
+
+    .toolbar-container {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1rem 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+
+    .toolbar-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    .btn-group {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      font-weight: 600;
+      font-size: 0.85rem;
+      padding: 0.5rem 0.95rem;
+      border-radius: 8px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .btn:hover {
+      border-color: var(--primary);
+      transform: translateY(-1px);
+    }
+
+    .btn.primary {
+      background: var(--primary);
+      color: #ffffff;
+      border-color: var(--primary);
+    }
+
+    .btn.primary:hover {
+      background: var(--primary-hover);
+    }
+
+    .btn.green {
+      background: var(--green);
+      color: #ffffff;
+      border-color: var(--green);
+    }
+
+    .btn.green:hover {
+      background: var(--green-hover);
+    }
+
+    .btn.danger {
+      color: var(--rose);
+    }
+
+    .btn.danger:hover {
+      background: rgba(225, 29, 72, 0.1);
+      border-color: var(--rose);
+    }
+
+    .slider-group {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .slider-group input[type="range"] {
+      cursor: pointer;
+      width: 100px;
+    }
+
+    /* Canvas Area */
+    .canvas-wrapper {
+      position: relative;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 0.75rem;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.05);
+    }
+
+    #clusterCanvas {
+      width: 100%;
+      height: 480px;
+      background-color: var(--canvas-bg);
+      border: 1px dashed var(--canvas-border);
+      border-radius: 10px;
+      cursor: crosshair;
+      display: block;
+    }
+
+    .stats-bar {
+      display: flex;
+      justify-content: space-around;
+      padding: 0.8rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-size: 0.9rem;
+    }
+
+    .stat-item {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .stat-value {
+      font-family: 'Fira Code', monospace;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    .instructions {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="brand">
+      <span class="badge">Live Lab</span>
+      <h1>Interactive 2D Clustering Playground</h1>
+    </div>
+    <div class="btn-group">
+      <button class="btn" onclick="toggleTheme()" id="themeBtn">🌓 Toggle Dark Mode</button>
+    </div>
+  </header>
+
+  <main>
+    <div class="toolbar-container">
+      <div class="toolbar-row">
+        <div class="btn-group">
+          <strong style="font-size: 0.85rem; color: var(--text-muted); margin-right: 0.2rem;">Presets:</strong>
+          <button class="btn" onclick="generatePreset('blobs')">3 Blobs</button>
+          <button class="btn" onclick="generatePreset('rings')">Concentric Rings</button>
+          <button class="btn" onclick="generatePreset('moons')">Two Moons</button>
+          <button class="btn" onclick="generatePreset('random')">Random Cloud</button>
+        </div>
+
+        <div class="btn-group">
+          <button class="btn danger" onclick="clearCanvas()">✕ Clear Canvas</button>
+        </div>
+      </div>
+
+      <div class="toolbar-row" style="border-top: 1px solid var(--border); padding-top: 0.75rem;">
+        <div class="btn-group">
+          <button class="btn primary" onclick="runKMeans()">▶ Run K-Means</button>
+          <div class="slider-group">
+            <label for="kInput">K = <span id="kVal">3</span></label>
+            <input type="range" id="kInput" min="2" max="6" value="3" oninput="document.getElementById('kVal').innerText = this.value">
+          </div>
+        </div>
+
+        <div class="btn-group">
+          <button class="btn green" onclick="runDBSCAN()">▶ Run DBSCAN</button>
+          <div class="slider-group">
+            <label for="epsInput">ε = <span id="epsVal">45</span>px</label>
+            <input type="range" id="epsInput" min="20" max="90" value="45" oninput="document.getElementById('epsVal').innerText = this.value">
+          </div>
+          <div class="slider-group">
+            <label for="minPtsInput">MinPts = <span id="minPtsVal">4</span></label>
+            <input type="range" id="minPtsInput" min="2" max="10" value="4" oninput="document.getElementById('minPtsVal').innerText = this.value">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="canvas-wrapper">
+      <canvas id="clusterCanvas" width="1120" height="480"></canvas>
+    </div>
+
+    <div class="stats-bar">
+      <div class="stat-item">Total Points: <span class="stat-value" id="statPoints">0</span></div>
+      <div class="stat-item">Clusters Formed: <span class="stat-value" id="statClusters">0</span></div>
+      <div class="stat-item">Noise Points (-1): <span class="stat-value" id="statNoise">0</span></div>
+      <div class="stat-item">Algorithm: <span class="stat-value" id="statAlgo">None</span></div>
+    </div>
+
+    <p class="instructions">
+      💡 <strong>Tip:</strong> Click anywhere on the canvas to add points manually. Notice how K-Means struggles on Concentric Rings and Moons, while DBSCAN unrolls them!
+    </p>
+  </main>
+
+  <script>
+    const canvas = document.getElementById('clusterCanvas');
+    const ctx = canvas.getContext('2d');
+    let points = [];
+    let centroids = [];
+    const colors = [
+      '#2563eb', '#e11d48', '#059669', '#d97706', '#7c3aed', '#0891b2', '#ea580c'
+    ];
+
+    function toggleTheme() {
+      document.body.classList.toggle('dark-mode');
+      draw();
+    }
+
+    // Add point on click (group of 4 points around cursor)
+    canvas.addEventListener('click', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const x = (e.clientX - rect.left) * (canvas.width / rect.width);
+      const y = (e.clientY - rect.top) * (canvas.height / rect.height);
+      for (let i = 0; i < 4; i++) {
+        points.push({
+          x: x + (Math.random() - 0.5) * 26,
+          y: y + (Math.random() - 0.5) * 26,
+          cluster: -1,
+          isCore: false
+        });
+      }
+      centroids = [];
+      updateStats('Manual Input', 0, 0);
+      draw();
+    });
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const isDark = document.body.classList.contains('dark-mode');
+
+      // Draw Points
+      points.forEach(p => {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 6.5, 0, Math.PI * 2);
+        if (p.cluster === -1) {
+          ctx.fillStyle = isDark ? '#64748b' : '#94a3b8'; // Noise / unassigned
+        } else {
+          ctx.fillStyle = colors[p.cluster % colors.length];
+        }
+        ctx.fill();
+        ctx.strokeStyle = isDark ? '#0f172a' : '#ffffff';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+      });
+
+      // Draw K-Means Centroids
+      centroids.forEach((c, idx) => {
+        ctx.beginPath();
+        ctx.arc(c.x, c.y, 11, 0, Math.PI * 2);
+        ctx.fillStyle = '#ffffff';
+        ctx.fill();
+        ctx.strokeStyle = colors[idx % colors.length];
+        ctx.lineWidth = 3.5;
+        ctx.stroke();
+
+        ctx.fillStyle = colors[idx % colors.length];
+        ctx.font = 'bold 12px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(`C${idx+1}`, c.x, c.y);
+      });
+
+      document.getElementById('statPoints').innerText = points.length;
+    }
+
+    function clearCanvas() {
+      points = [];
+      centroids = [];
+      updateStats('None', 0, 0);
+      draw();
+    }
+
+    function updateStats(algo, clusterCount, noiseCount) {
+      document.getElementById('statAlgo').innerText = algo;
+      document.getElementById('statClusters').innerText = clusterCount;
+      document.getElementById('statNoise').innerText = noiseCount;
+    }
+
+    function generatePreset(type) {
+      points = [];
+      centroids = [];
+      const cw = canvas.width;
+      const ch = canvas.height;
+
+      if (type === 'blobs') {
+        const centers = [
+          {x: cw * 0.25, y: ch * 0.35},
+          {x: cw * 0.52, y: ch * 0.65},
+          {x: cw * 0.78, y: ch * 0.30}
+        ];
+        centers.forEach(c => {
+          for (let i = 0; i < 55; i++) {
+            points.push({
+              x: c.x + (Math.random() - 0.5) * 110,
+              y: c.y + (Math.random() - 0.5) * 110,
+              cluster: -1
+            });
+          }
+        });
+      } else if (type === 'rings') {
+        const cx = cw / 2;
+        const cy = ch / 2;
+        // Inner ring
+        for (let i = 0; i < 60; i++) {
+          const angle = Math.random() * Math.PI * 2;
+          const r = 55 + Math.random() * 20;
+          points.push({ x: cx + r * Math.cos(angle), y: cy + r * Math.sin(angle), cluster: -1 });
+        }
+        // Outer ring
+        for (let i = 0; i < 130; i++) {
+          const angle = Math.random() * Math.PI * 2;
+          const r = 160 + Math.random() * 28;
+          points.push({ x: cx + r * Math.cos(angle), y: cy + r * Math.sin(angle), cluster: -1 });
+        }
+      } else if (type === 'moons') {
+        const cx = cw / 2;
+        const cy = ch / 2;
+        for (let i = 0; i < 90; i++) {
+          const theta = Math.PI * (i / 90);
+          points.push({
+            x: cx - 120 + 130 * Math.cos(theta) + (Math.random() - 0.5) * 22,
+            y: cy - 40 - 130 * Math.sin(theta) + (Math.random() - 0.5) * 22,
+            cluster: -1
+          });
+        }
+        for (let i = 0; i < 90; i++) {
+          const theta = Math.PI * (i / 90);
+          points.push({
+            x: cx + 10 - 130 * Math.cos(theta) + (Math.random() - 0.5) * 22,
+            y: cy + 40 + 130 * Math.sin(theta) + (Math.random() - 0.5) * 22,
+            cluster: -1
+          });
+        }
+      } else if (type === 'random') {
+        for (let i = 0; i < 150; i++) {
+          points.push({
+            x: Math.random() * (cw - 80) + 40,
+            y: Math.random() * (ch - 80) + 40,
+            cluster: -1
+          });
+        }
+      }
+
+      updateStats('Preset Loaded', 0, 0);
+      draw();
+    }
+
+    function runKMeans() {
+      const k = parseInt(document.getElementById('kInput').value, 10);
+      if (points.length < k) {
+        alert("Please add more points before running K-Means!");
+        return;
+      }
+
+      // K-Means++ style seeded initialization
+      centroids = [];
+      const firstIdx = Math.floor(Math.random() * points.length);
+      centroids.push({ x: points[firstIdx].x, y: points[firstIdx].y });
+
+      while (centroids.length < k) {
+        let dists = points.map(p => {
+          return Math.min(...centroids.map(c => Math.hypot(p.x - c.x, p.y - c.y)));
+        });
+        const maxDistIdx = dists.indexOf(Math.max(...dists));
+        centroids.push({ x: points[maxDistIdx].x, y: points[maxDistIdx].y });
+      }
+
+      // Lloyd's iteration
+      for (let iter = 0; iter < 15; iter++) {
+        // Assign
+        points.forEach(p => {
+          let minDist = Infinity;
+          let bestC = 0;
+          centroids.forEach((c, idx) => {
+            const d = Math.hypot(p.x - c.x, p.y - c.y);
+            if (d < minDist) {
+              minDist = d;
+              bestC = idx;
+            }
+          });
+          p.cluster = bestC;
+        });
+
+        // Update
+        centroids = centroids.map((c, idx) => {
+          const assigned = points.filter(p => p.cluster === idx);
+          if (assigned.length === 0) return c;
+          const avgX = assigned.reduce((sum, p) => sum + p.x, 0) / assigned.length;
+          const avgY = assigned.reduce((sum, p) => sum + p.y, 0) / assigned.length;
+          return { x: avgX, y: avgY };
+        });
+      }
+
+      updateStats(`K-Means (K=${k})`, k, 0);
+      draw();
+    }
+
+    function runDBSCAN() {
+      const eps = parseFloat(document.getElementById('epsInput').value);
+      const minPts = parseInt(document.getElementById('minPtsInput').value, 10);
+      if (points.length === 0) return;
+
+      centroids = []; // DBSCAN has no centroids
+      points.forEach(p => {
+        p.cluster = -1;
+        p.isCore = false;
+      });
+
+      let clusterId = 0;
+
+      for (let i = 0; i < points.length; i++) {
+        const p = points[i];
+        if (p.cluster !== -1) continue;
+
+        const neighbors = points.filter(q => Math.hypot(p.x - q.x, p.y - q.y) <= eps);
+        if (neighbors.length < minPts) {
+          p.cluster = -1; // Noise point
+        } else {
+          p.cluster = clusterId;
+          p.isCore = true;
+          const queue = [...neighbors];
+
+          while (queue.length > 0) {
+            const q = queue.pop();
+            if (q.cluster === -1) q.cluster = clusterId;
+
+            const qNeighbors = points.filter(r => Math.hypot(q.x - r.x, q.y - r.y) <= eps);
+            if (qNeighbors.length >= minPts) {
+              q.isCore = true;
+              qNeighbors.forEach(r => {
+                if (r.cluster === -1) {
+                  r.cluster = clusterId;
+                  queue.push(r);
+                }
+              });
+            }
+          }
+          clusterId++;
+        }
+      }
+
+      const noiseCount = points.filter(p => p.cluster === -1).length;
+      updateStats(`DBSCAN (ε=${eps}, MinPts=${minPts})`, clusterId, noiseCount);
+      draw();
+    }
+
+    // Initial preset on load
+    generatePreset('blobs');
+  </script>
+</body>
+</html>
